@@ -43,14 +43,14 @@ class AutoCorrect(BaseConverter):
 
     def _autocorrect(self, text: str):
         tb = TextBlob(text)
-        return tb.correct()
+        return str(tb.correct())
 
     def convert(self, data) -> np.ndarray:
         return np.array([self._autocorrect(val) for val in data])
 
 
 class Pipeline(BaseConverter):
-    def __init__(self, *converters: list[BaseConverter]):
+    def __init__(self, *converters: BaseConverter):
         self._converters = converters
 
     def convert(self, data: np.ndarray) -> np.ndarray:
