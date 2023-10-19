@@ -12,16 +12,6 @@ from pytest import approx
 from itemie.core import item
 
 
-class TestConverter:
-    def test_convert(self):
-        keyvals = {"apple": 1.0, "pear": 2.0}
-        converter = item.Converter(keyvals)
-        data = np.array(["apple", "pear", "apple", "apple", "pear"])
-        converted = converter.convert(data)
-        expected = np.array([1.0, 2.0, 1.0, 1.0, 2.0])
-        assert converted == approx(expected)
-
-
 @pytest.fixture
 def item_b():
     data = np.array([[1, 2, 3, 4], [2, 3, 4, 5], [1, 2, 3, 4]])
@@ -36,7 +26,7 @@ class TestBaseItem:
         data = np.array([[1, 2, 3, 4], [2, 3, 4, 5], [1, 2, 3, 4]])
         df = pd.DataFrame(data, columns=["a", "b", "c", "d"])
         b = item.BaseItem(name="banana", key="b")
-        res = b.fit(df)
+        res = b.fit_transform(df)
         expected = np.array([2, 3, 2])
         print(res)
         assert res.values == approx(expected)
