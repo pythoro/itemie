@@ -8,29 +8,7 @@ Created on Tue Oct 17 21:26:39 2023
 import numpy as np
 import pandas as pd
 
-TEXTBLOB_LOADED = True
-try:
-    from textblob import TextBlob
-except ModuleNotFoundError:
-    TEXTBLOB_LOADED = False
-
-
-class Converter:
-    def __init__(self, keyvals: dict):
-        self._keyvals = keyvals
-
-    def convert(self, data) -> np.ndarray:
-        dct = self._keyvals
-        return np.array([dct[k] for k in data])
-
-
-class ConverterFunction:
-    def __init__(self, func):
-        self._func = func
-
-    def convert(self, data) -> np.ndarray:
-        return np.array([self._func(val) for val in data])
-
+from .convert import BaseConverter
 
 
 class BaseItem:
@@ -40,12 +18,12 @@ class BaseItem:
         self,
         name: str,
         key: str,
-        converter: Converter = None,
+        converter: BaseConverter = None,
         typ: str = "raw",
     ):
         self._name = name
         self._key = key
-        self._converter = converter
+        self._converter = converter  # or convert class
         self._raw = None
         self._typ = typ
 
