@@ -12,10 +12,10 @@ from pytest import approx
 
 from itemie.core import convert
 
-class TestReplacer:
+class TestReplace:
     def test_convert(self):
         keyvals = {"apple": 1.0, "pear": 2.0}
-        converter = convert.Replacer(keyvals)
+        converter = convert.Replace(keyvals)
         data = np.array(["apple", "pear", "apple", "apple", "pear"])
         converted = converter.convert(data)
         expected = np.array([1.0, 2.0, 1.0, 1.0, 2.0])
@@ -36,7 +36,7 @@ class TestPipeline:
     def test_convert(self):
         autocorrect = convert.AutoCorrect()
         keyvals = {"apple": 1.0, "pear": 2.0}
-        replacer = convert.Replacer(keyvals)
+        replacer = convert.Replace(keyvals)
         converter = convert.Pipeline(autocorrect, replacer)
         data = np.array(["apple", "pear", "apple", "applee", "pear"])
         converted = converter.convert(data)

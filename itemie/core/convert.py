@@ -19,13 +19,32 @@ class BaseConverter:
         raise NotImplementedError
 
 
-class Replacer(BaseConverter):
-    def __init__(self, keyvals: dict):
+class AsType(BaseConverter):
+    def __init__(self, typ):
+        self._typ = typ
+    
+    def convert(self, data: np.ndarray) -> np.ndarray:
+        return np.array(data.astype(self._typ))
+
+
+class Replace(BaseConverter):
+    def __init__(self, keyvals: dict, group_other=True, other_val='other'):
         self._keyvals = keyvals
+        self._group_other = group_other
+        self._other_val = other_val
 
     def convert(self, data) -> np.ndarray:
         dct = self._keyvals
-        return np.array([dct[k] for k in data])
+        out = []
+        for k in data:
+            if k in dct:
+                out.append(dct[k])
+            else:
+                if self._group_other:
+                    out.append(self._other_val)
+                else:
+                    out.append(k)
+        return np.array(out)
 
 
 class Function(BaseConverter):
@@ -34,6 +53,14 @@ class Function(BaseConverter):
 
     def convert(self, data) -> np.ndarray:
         return np.array([self._func(val) for val in data])
+
+
+class VectorisedFunction(BaseConverter):
+    def __init__(self, func):
+        self._func = func
+
+    def convert(self, data) -> np.ndarray:
+        return self._func(data)
 
 
 class AutoCorrect(BaseConverter):
@@ -47,6 +74,27 @@ class AutoCorrect(BaseConverter):
 
     def convert(self, data) -> np.ndarray:
         return np.array([self._autocorrect(val) for val in data])
+
+
+class Lower(BaseConverter):
+    def convert(self, data: np.ndarray) -> np.ndarray:
+        return np.array([s.lower() for s in data])
+
+
+class Splitter(BaseConverter):
+    def __init__(self, splits: list[str]):
+        self._splits = splits
+
+    def _split(self, text: str):
+        s = text
+        for split in self._splits:
+            s = s.replace(split, "|||")
+        lst = s.split("|||")
+        stripped = [t.strip() for t in lst]
+        return stripped
+
+    def convert(self, data) -> list[list]:
+        return [self._split(val) for val in data]
 
 
 class Pipeline(BaseConverter):

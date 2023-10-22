@@ -23,7 +23,7 @@ class BaseItem:
     ):
         self._name = name
         self._key = key
-        self._converter = converter  # or convert class
+        self.set_converter(converter)
         self._raw = None
         self._typ = typ
 
@@ -34,6 +34,9 @@ class BaseItem:
     @property
     def key(self):
         return self._key
+
+    def set_converter(self, converter):
+        self._converter = converter
 
     def _get_values(self, typ: str = None) -> np.ndarray:
         typ = self._typ if typ is None else typ
@@ -64,9 +67,13 @@ class BaseItem:
             return self._fit_hook(converted)
         elif call == 'fit_transform':
             self._fit_hook(converted)
+        elif call == 'transform':
+            pass
+        else:
+            raise ValueError("unknown call arg.: " + call)
         self._raw = series
-        self._transformed = converted
-        return self._transform_hook(converted)
+        self._transformed = self._transform_hook(converted)
+        return self._transformed
 
     def fit(self, df: pd.DataFrame) -> np.ndarray:
         return self._fit_transform(df, 'fit')
@@ -83,15 +90,23 @@ class BaseItem:
     def values(self, typ: str = None) -> np.ndarray:
         return self._get_values(typ=typ)
 
-    def __call__(self, typ: str = None) -> np.ndarray:
-        return self._get_values(typ=typ)
-
     def raw(self) -> np.ndarray:
         return self._raw
 
 
 class NumericItem(BaseItem):
     """A numeric item class"""
+
+    def __init__(
+        self,
+        name: str,
+        key: str,
+        converter: BaseConverter = None,
+        typ: str = "values",
+        reverse_offset: float = None,
+    ):
+        super().__init__(name=name, key=key, converter=converter, typ=typ)
+        self._reverse_offset = reverse_offset
 
     @property
     def mean(self):
@@ -102,6 +117,10 @@ class NumericItem(BaseItem):
         return self._std
 
     @property
+    def sem(self):
+        return self._sem
+
+    @property
     def min(self):
         return self._min
 
@@ -109,11 +128,39 @@ class NumericItem(BaseItem):
     def max(self):
         return self._max
 
-    def _fit_hook(self, corrected):
-        self._mean = np.nanmean(corrected)
-        self._std = np.nanstd(corrected)
-        self._max = np.max(corrected)
-        self._min = np.min(corrected)
+    @property
+    def size(self):
+        return len(self._transformed)
+
+    def stats(self):
+        labels = ['mean', 'std', 'min', 'max', 'sem', 'ci95']
+        values = [self.mean, self.std, self.min, self.max, self.sem, self.sem * 1.95996]
+        return labels, values
+
+    def counts(self, as_int=True, as_percent=False):
+        vals, counts = np.unique(self._transformed, return_counts=True)
+        n = self.size / 100 if as_percent else 1
+        def convert_nan(v):
+            if np.isnan(v):
+                return 'na'
+            if as_int:
+                return int(v)
+            return v
+        return {convert_nan(v): c / n for v, c in zip(vals, counts)}
+    
+    def _fit_hook(self, converted):
+        if self._reverse_offset is not None:
+            converted = -converted + self._reverse_offset
+        self._mean = np.nanmean(converted)
+        self._std = np.nanstd(converted)
+        self._max = np.nanmax(converted)
+        self._min = np.nanmin(converted)
+        self._sem = np.nanstd(converted, ddof=1) / np.sqrt(np.size(converted))
+
+    def _transform_hook(self, transformed):
+        if self._reverse_offset is not None:
+            transformed = -transformed + self._reverse_offset
+        return transformed
 
     def _get_values(self, typ: str = None) -> np.ndarray:
         typ = self._typ if typ is None else typ
@@ -130,3 +177,58 @@ class NumericItem(BaseItem):
     def normalised(self) -> np.ndarray:
         out = self._transformed - self._min
         return out / np.max(out)
+
+
+class PhraseCount(BaseItem):
+    """A numeric item class"""
+    
+    def __init__(
+        self,
+        name: str,
+        key: str,
+        converter: BaseConverter = None,
+        typ: str = "values",
+        seq: list[str] = None,
+    ):
+        super().__init__(name=name, key=key, converter=converter, typ=typ)
+        self._seq = seq
+
+    @property
+    def counts(self):
+        return self._counts
+
+    def _get_values(self, typ: str = None) -> np.ndarray:
+        typ = self._typ if typ is None else typ
+        if typ == 'counts':
+            return self.counts
+        else:
+            return super()._get_values(typ=typ)
+
+    def _count(self, converted):
+        if self._seq is not None:
+            counts = {k: 0 for k in self._seq}
+        else:
+            counts = {}
+        all_phrases = []
+        for obj in converted:
+            if isinstance(obj, list):
+                all_phrases.extend(obj)
+            else:
+                all_phrases.append(obj)
+        for phrase in all_phrases:
+            if phrase in counts:
+                counts[phrase] += 1
+            else:
+                counts[phrase] = 0
+        if self._seq is None:
+            sorted_keys = list(counts.keys())
+            sorted_keys.sort(key=lambda x: str(x))
+            counts = {k: counts[k] for k in sorted_keys}
+        return counts
+
+    def _transform_hook(self, transformed):
+        self._counts = self._count(transformed)
+        return transformed
+
+    def as_list(self):
+        return list(self._transformed.keys())
