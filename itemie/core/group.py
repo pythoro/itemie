@@ -8,6 +8,10 @@ Created on Wed Oct 18 19:32:05 2023
 import numpy as np
 import pandas as pd
 
+import warnings
+from contextlib import suppress
+
+
 from .item import BaseItem
 
 
@@ -115,12 +119,19 @@ class BaseGroup:
         )
 
     def data_dict(
-        self, typ: str = "default", match_size: bool = True
+        self, typ: str = "default", match_size: bool = True,
     ) -> dict:
         dcts = [
             item.data_dict(typ=typ, match_size=match_size)
             for item in self.items
         ]
+        # Now append it's own scale / summary
+        with suppress(ValueError):
+            values = self.values(typ)
+            if match_size and len(values) != self.size:
+                pass
+            else:
+                dcts.append({self.name: values})
         out = {}
         for dct in dcts:
             out.update(dct)
@@ -135,25 +146,26 @@ class BaseGroup:
 
 
 class NumericGroup(BaseGroup):
+    def _means(self, values):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return np.nanmean(values, axis=1)
+
     @property
     def raw(self):
-        values = self.raw_data("array")
-        return np.nanmean(values, axis=1)
+        return self._means(self.raw_data("array"))
 
     @property
     def converted(self):
-        values = self.converted_data("array")
-        return np.nanmean(values, axis=1)
+        return self._means(self.converted_data("array"))
 
     @property
     def standardised(self):
-        values = np.array([item.standardised for item in self.items])
-        return np.nanmean(values, axis=1)
+        return self._means([item.standardised for item in self.items])
 
     @property
     def normalised(self):
-        values = np.array([item.normalised for item in self.items])
-        return np.nanmean(values, axis=1)
+        return self._means([item.normalised for item in self.items])
 
     def means(self, typ: str = None) -> np.ndarray:
         values = self.converted_data("array")
