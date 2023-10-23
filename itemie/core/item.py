@@ -32,7 +32,11 @@ class BaseItem:
         return str(self)
 
     def _str(self, prefix=''):
-        return prefix + self.__class__.__name__ + " '" + self.name + "'"
+        conv = ""
+        if self._converter is not None:
+            conv = " (" + self._converter._str() + ")"
+        return (prefix + self.__class__.__name__ + " '" + self.name + "'"
+                + conv)
 
     @property
     def name(self):

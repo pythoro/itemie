@@ -18,6 +18,11 @@ class BaseConverter:
     def convert(self, data: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
+    def __str__(self):
+        return self._str()
+
+    def _str(self, prefix=""):
+        return prefix + self.__class__.__name__
 
 class AsType(BaseConverter):
     def __init__(self, typ):
@@ -100,6 +105,13 @@ class Splitter(BaseConverter):
 class Pipeline(BaseConverter):
     def __init__(self, *converters: BaseConverter):
         self._converters = converters
+
+    def __str__(self):
+        return self._str()
+
+    def _str(self, prefix=""):
+        lst = [c._str(prefix) for c in self._converters]
+        return prefix + ', '.join(lst)
 
     def convert(self, data: np.ndarray) -> np.ndarray:
         transformed = data
