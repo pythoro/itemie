@@ -25,6 +25,15 @@ class BaseItem:
         self.set_converter(converter)
         self._raw = None
 
+    def __str__(self):
+        return self.__class__.__name__ + " '" + self.name + "'"
+
+    def __repr__(self):
+        return str(self)
+
+    def _str(self, prefix=''):
+        return prefix + self.__class__.__name__ + " '" + self.name + "'"
+
     @property
     def name(self):
         return self._name
@@ -119,6 +128,13 @@ class BaseItem:
         df.index.name = "response"
         df.columns.name = "item"
         return df
+
+    def _get_all_items(self):
+        return {self.name: self}
+
+
+class Item(BaseItem):
+    pass
 
 
 class NumericItem(BaseItem):

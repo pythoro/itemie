@@ -19,8 +19,25 @@ class BaseGroup:
     def __init__(self, name, items=None):
         self._name = name
         self._items = {}
+        self._all_items = {}
         if items is not None:
             self.add(items)
+
+    def __str__(self):
+        return self._str()
+
+    def __repr__(self):
+        return str(self)
+
+    def _str(self, prefix=''):
+        next_prefix = prefix + '  '
+        return (
+            prefix + self.__class__.__name__
+            + " '"
+            + self.name
+            + "'\n"
+            + "\n".join([item._str(next_prefix) for item in self.items])
+        )
 
     @property
     def name(self):
@@ -39,10 +56,10 @@ class BaseGroup:
         return self.items[0].size
 
     def __getitem__(self, key):
-        return self._items[key]
+        return self.get(key)
 
     def get(self, key):
-        return self._items[key]
+        return self._all_items[key]
 
     def stats(self, assemble_as="df"):
         labels, _ = self.items[0].stats()
@@ -50,8 +67,14 @@ class BaseGroup:
         stats = self._assemble(values, assemble_as=assemble_as)
         return stats
 
+    def _get_all_items(self):
+        out = {self.name: self}
+        out.update(self._all_items)
+        return out
+
     def _add(self, item: BaseItem):
         self._items[item.name] = item
+        self._all_items.update(item._get_all_items())
 
     def add(self, items):
         if isinstance(items, (tuple, list)):
@@ -106,12 +129,12 @@ class BaseGroup:
             item.fit(df)
 
     def transform(self, df: pd.DataFrame) -> np.ndarray:
-        values = [item.transform(df) for item in self.items]
-        return self._as_array(values)
+        for item in self.items:
+            item.transform(df)
 
     def fit_transform(self, df: pd.DataFrame) -> np.ndarray:
-        values = [item.fit_transform(df) for item in self.items]
-        return self._as_array(values)
+        for item in self.items:
+            item.fit_transform(df)
 
     def values(self, typ):
         raise ValueError(
@@ -119,7 +142,9 @@ class BaseGroup:
         )
 
     def data_dict(
-        self, typ: str = "default", match_size: bool = True,
+        self,
+        typ: str = "default",
+        match_size: bool = True,
     ) -> dict:
         dcts = [
             item.data_dict(typ=typ, match_size=match_size)
@@ -143,6 +168,10 @@ class BaseGroup:
         df.index.name = "response"
         df.columns.name = "item"
         return df
+
+
+class Group(BaseGroup):
+    pass
 
 
 class NumericGroup(BaseGroup):
