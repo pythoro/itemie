@@ -19,13 +19,11 @@ class BaseItem:
         name: str,
         key: str,
         converter: BaseConverter = None,
-        typ: str = "values",
     ):
         self._name = name
         self._key = key
         self.set_converter(converter)
         self._raw = None
-        self._typ = typ
 
     @property
     def name(self):
@@ -35,20 +33,28 @@ class BaseItem:
     def key(self):
         return self._key
 
+    @property
+    def size(self):
+        return len(self.raw)
+
+    @property
+    def raw_fitted(self):
+        return self._raw_fitted
+
+    @property
+    def converted_fitted(self):
+        return self._converted_fitted
+
+    @property
+    def raw(self):
+        return self._raw
+
+    @property
+    def converted(self):
+        return self._converted
+
     def set_converter(self, converter):
         self._converter = converter
-
-    def _get_values(self, typ: str = None) -> np.ndarray:
-        typ = self._typ if typ is None else typ
-        if typ == "raw":
-            return self._raw
-        elif typ == "values":
-            return self._transformed
-        else:
-            raise ValueError("typ not known: " + str(typ))
-
-    def _fit_hook(self, converted):
-        pass
 
     def _convert(self, series: np.ndarray) -> np.ndarray:
         if self._converter is None:
@@ -57,41 +63,62 @@ class BaseItem:
             converted = self._converter.convert(series)
         return converted
 
-    def _get_series(self,df: pd.DataFrame) -> np.ndarray:
+    def get_raw(self, df: pd.DataFrame) -> np.ndarray:
         return df[self._key]
 
-    def _fit_transform(self, df: pd.DataFrame, call) -> np.ndarray:
-        series = self._get_series(df)
-        converted = self._convert(series)
-        if call == 'fit':
-            return self._fit_hook(converted)
-        elif call == 'fit_transform':
-            self._fit_hook(converted)
-        elif call == 'transform':
-            pass
+    def fit(self, df: pd.DataFrame) -> None:
+        raw = self.get_raw(df)
+        converted = self._convert(raw)
+        self._raw_fitted = raw
+        self._converted_fitted = converted
+        self._post_fit(converted)
+
+    def transform(self, df: pd.DataFrame) -> None:
+        raw = self.get_raw(df)
+        converted = self._convert(raw)
+        self._raw = raw
+        self._converted = converted
+        self._post_transform(converted)
+        return self._converted
+
+    def fit_transform(self, df: pd.DataFrame) -> None:
+        raw = self.get_raw(df)
+        converted = self._convert(raw)
+        self._raw_fitted = raw
+        self._converted_fitted = converted
+        self._post_fit(converted)
+        self._raw = raw
+        self._converted = converted
+        return converted
+
+    def _post_fit(self, converted):
+        pass
+
+    def _post_transform(self, converted):
+        pass
+
+    def values(self, typ):
+        if typ == "raw":
+            return self.raw
+        elif typ in ["default", "converted"]:
+            return self.converted
         else:
-            raise ValueError("unknown call arg.: " + call)
-        self._raw = series
-        self._transformed = self._transform_hook(converted)
-        return self._transformed
+            raise ValueError(
+                "Item " + self.name + " — typ not understood:" + str(typ)
+            )
 
-    def fit(self, df: pd.DataFrame) -> np.ndarray:
-        return self._fit_transform(df, 'fit')
+    def data_dict(self, typ="default", match_size=True):
+        values = self.values(typ)
+        if match_size and len(values) != self.size:
+            return {}
+        return {self.name: values}
 
-    def _transform_hook(self, transformed):
-        return transformed
-
-    def transform(self, df: pd.DataFrame) -> np.ndarray:
-        return self._fit_transform(df, 'transform')
-
-    def fit_transform(self, df: pd.DataFrame) -> np.ndarray:
-        return self._fit_transform(df, 'fit_transform')
-
-    def values(self, typ: str = None) -> np.ndarray:
-        return self._get_values(typ=typ)
-
-    def raw(self) -> np.ndarray:
-        return self._raw
+    def data_df(self, typ="default", match_size=True):
+        dct = self.data_dict(typ=typ, match_size=match_size)
+        df = pd.DataFrame.from_dict(dct)
+        df.index.name = "response"
+        df.columns.name = "item"
+        return df
 
 
 class NumericItem(BaseItem):
@@ -102,10 +129,9 @@ class NumericItem(BaseItem):
         name: str,
         key: str,
         converter: BaseConverter = None,
-        typ: str = "values",
         reverse_offset: float = None,
     ):
-        super().__init__(name=name, key=key, converter=converter, typ=typ)
+        super().__init__(name=name, key=key, converter=converter)
         self._reverse_offset = reverse_offset
 
     @property
@@ -130,25 +156,43 @@ class NumericItem(BaseItem):
 
     @property
     def size(self):
-        return len(self._transformed)
+        return len(self._converted)
+
+    @property
+    def standardised(self) -> np.ndarray:
+        return (self._converted - self._mean) / self._std
+
+    @property
+    def normalised(self) -> np.ndarray:
+        out = self._converted - self._min
+        return out / np.max(out)
 
     def stats(self):
-        labels = ['mean', 'std', 'min', 'max', 'sem', 'ci95']
-        values = [self.mean, self.std, self.min, self.max, self.sem, self.sem * 1.95996]
+        labels = ["mean", "std", "min", "max", "sem", "ci95"]
+        values = [
+            self.mean,
+            self.std,
+            self.min,
+            self.max,
+            self.sem,
+            self.sem * 1.95996,
+        ]
         return labels, values
 
     def counts(self, as_int=True, as_percent=False):
-        vals, counts = np.unique(self._transformed, return_counts=True)
+        vals, counts = np.unique(self._converted, return_counts=True)
         n = self.size / 100 if as_percent else 1
+
         def convert_nan(v):
             if np.isnan(v):
-                return 'na'
+                return "na"
             if as_int:
                 return int(v)
             return v
+
         return {convert_nan(v): c / n for v, c in zip(vals, counts)}
-    
-    def _fit_hook(self, converted):
+
+    def _post_fit(self, converted):
         if self._reverse_offset is not None:
             converted = -converted + self._reverse_offset
         self._mean = np.nanmean(converted)
@@ -156,53 +200,38 @@ class NumericItem(BaseItem):
         self._max = np.nanmax(converted)
         self._min = np.nanmin(converted)
         self._sem = np.nanstd(converted, ddof=1) / np.sqrt(np.size(converted))
+        return converted
 
-    def _transform_hook(self, transformed):
+    def _post_transform(self, transformed):
         if self._reverse_offset is not None:
             transformed = -transformed + self._reverse_offset
         return transformed
 
-    def _get_values(self, typ: str = None) -> np.ndarray:
-        typ = self._typ if typ is None else typ
-        if typ == "standardised":
-            return self.standardised()
+    def values(self, typ):
+        if typ in ["default", "standardised"]:
+            return self.standardised
         elif typ == "normalised":
-            return self.normalised()
+            return self.normalised
         else:
-            return super()._get_values(typ=typ)
-
-    def standardised(self) -> np.ndarray:
-        return (self._transformed - self._mean) / self._std
-
-    def normalised(self) -> np.ndarray:
-        out = self._transformed - self._min
-        return out / np.max(out)
+            return super().values(typ)
 
 
 class PhraseCount(BaseItem):
     """A numeric item class"""
-    
+
     def __init__(
         self,
         name: str,
         key: str,
         converter: BaseConverter = None,
-        typ: str = "values",
         seq: list[str] = None,
     ):
-        super().__init__(name=name, key=key, converter=converter, typ=typ)
+        super().__init__(name=name, key=key, converter=converter)
         self._seq = seq
 
     @property
     def counts(self):
         return self._counts
-
-    def _get_values(self, typ: str = None) -> np.ndarray:
-        typ = self._typ if typ is None else typ
-        if typ == 'counts':
-            return self.counts
-        else:
-            return super()._get_values(typ=typ)
 
     def _count(self, converted):
         if self._seq is not None:
@@ -226,9 +255,15 @@ class PhraseCount(BaseItem):
             counts = {k: counts[k] for k in sorted_keys}
         return counts
 
-    def _transform_hook(self, transformed):
+    def _post_transform(self, transformed):
         self._counts = self._count(transformed)
         return transformed
 
     def as_list(self):
-        return list(self._transformed.keys())
+        return list(self._counts.keys())
+
+    def values(self, typ):
+        if typ in ["default", "counts"]:
+            return self.counts
+        else:
+            return super().values(typ)

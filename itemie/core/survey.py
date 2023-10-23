@@ -77,6 +77,6 @@ class Survey:
     def item_data_df(self, typ=None):
         dct = self.item_data_dict(typ=typ)
         df = pd.DataFrame.from_dict(dct)
-        df.index.name = 'observation'
+        df.index.name = 'response'
         df.columns.name = 'item'
         return df
