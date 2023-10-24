@@ -19,10 +19,12 @@ class BaseItem:
         name: str,
         key: str,
         converter: BaseConverter = None,
+        text=None,
     ):
         self._name = name
         self._key = key
         self.set_converter(converter)
+        self._text = text
         self._raw = None
 
     def __str__(self):
@@ -149,9 +151,10 @@ class NumericItem(BaseItem):
         name: str,
         key: str,
         converter: BaseConverter = None,
+        text=None,
         reverse_offset: float = None,
     ):
-        super().__init__(name=name, key=key, converter=converter)
+        super().__init__(name=name, key=key, converter=converter, text=text)
         self._reverse_offset = reverse_offset
 
     @property
@@ -244,9 +247,10 @@ class PhraseCount(BaseItem):
         name: str,
         key: str,
         converter: BaseConverter = None,
+        text=None,
         seq: list[str] = None,
     ):
-        super().__init__(name=name, key=key, converter=converter)
+        super().__init__(name=name, key=key, converter=converter, text=text)
         self._seq = seq
 
     @property

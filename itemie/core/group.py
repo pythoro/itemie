@@ -16,9 +16,15 @@ from .item import BaseItem
 
 
 class BaseGroup:
-    def __init__(self, name, items=None):
+    def __init__(self, name, pref=None, text=None, items=None, item_cls=None, group_cls=None,
+                 converter=None):
         self._name = name
+        self._pref = pref
+        self._text = text
         self._items = {}
+        self._item_cls = item_cls
+        self._group_cls = group_cls
+        self._converter = converter
         self._all_items = {}
         if items is not None:
             self.add(items)
@@ -55,6 +61,27 @@ class BaseGroup:
     def size(self):
         return self.items[0].size
 
+    def add_item(self, name, key, converter=None, cls=None, text=None, **kwargs):
+        if cls is None:
+            if self._item_cls is None:
+                raise ValueError('cls required when group item_cls not set.')
+            cls = self._item_cls
+        converter = self._converter if converter is None else converter
+        if self._pref is not None:
+            key = self._pref + key
+        item = cls(name=name, key=key, converter=converter, text=text, **kwargs)
+        self.add(item)
+        return item
+
+    def add_group(self, name, pref, cls=None, text=None, **kwargs):
+        if cls is None:
+            if self._group_cls is None:
+                raise ValueError('cls required when group group_cls not set.')
+            cls = self._group_cls
+        grp = cls(name=name, pref=pref, text=text, **kwargs)
+        self.add(grp)
+        return grp
+
     def __getitem__(self, key):
         return self.get(key)
 
@@ -73,6 +100,8 @@ class BaseGroup:
         return out
 
     def _add(self, item: BaseItem):
+        if item.name in self._items or item.name in self._all_items:
+            raise KeyError('Duplicate item name specified: ' + item.name)
         self._items[item.name] = item
         self._all_items.update(item._get_all_items())
 
@@ -80,10 +109,8 @@ class BaseGroup:
         if isinstance(items, (tuple, list)):
             for item in items:
                 self._add(item)
-        elif isinstance(items, BaseItem):
-            self._add(item)
         else:
-            raise ValueError("Unknown type for item: " + str(type(item)))
+            self._add(items)
 
     def raw_fitted_data(self, typ="df"):
         values = [item.raw_fitted for item in self.items]
