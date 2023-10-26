@@ -112,7 +112,7 @@ class BaseItem:
     def _post_transform(self, converted):
         pass
 
-    def values(self, typ):
+    def values(self, typ='default'):
         if typ == "raw":
             return self.raw
         elif typ in ["default", "converted"]:
@@ -230,7 +230,7 @@ class NumericItem(BaseItem):
             transformed = -transformed + self._reverse_offset
         return transformed
 
-    def values(self, typ):
+    def values(self, typ='default'):
         if typ in ["default", "standardised"]:
             return self.standardised
         elif typ == "normalised":
@@ -286,7 +286,7 @@ class PhraseCount(BaseItem):
     def as_list(self):
         return list(self._counts.keys())
 
-    def values(self, typ):
+    def values(self, typ='default'):
         if typ in ["default", "counts"]:
             return self.counts
         else:

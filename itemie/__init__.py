@@ -6,3 +6,5 @@ Created on Wed Oct 18 18:54:17 2023
 """
 from . import core
 from . import utils
+from . import analyse
+from . import report
