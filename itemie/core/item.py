@@ -5,6 +5,7 @@ Created on Tue Oct 17 21:26:39 2023
 @author: Reuben
 """
 
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
@@ -33,12 +34,11 @@ class BaseItem:
     def __repr__(self):
         return str(self)
 
-    def _str(self, prefix=''):
+    def _str(self, prefix=""):
         conv = ""
         if self._converter is not None:
             conv = " (" + self._converter._str() + ")"
-        return (prefix + self.__class__.__name__ + " '" + self.name + "'"
-                + conv)
+        return prefix + self.__class__.__name__ + " '" + self.name + "'" + conv
 
     @property
     def name(self):
@@ -47,6 +47,10 @@ class BaseItem:
     @property
     def key(self):
         return self._key
+
+    @property
+    def text(self):
+        return self._text
 
     @property
     def size(self):
@@ -104,6 +108,7 @@ class BaseItem:
         self._post_fit(converted)
         self._raw = raw
         self._converted = converted
+        self._post_transform(converted)
         return converted
 
     def _post_fit(self, converted):
@@ -112,7 +117,8 @@ class BaseItem:
     def _post_transform(self, converted):
         pass
 
-    def values(self, typ='default'):
+    def values(self, typ="default"):
+        """Make the default an instance attribute, so it can be set"""
         if typ == "raw":
             return self.raw
         elif typ in ["default", "converted"]:
@@ -141,6 +147,85 @@ class BaseItem:
 
 class Item(BaseItem):
     pass
+
+
+class MultiCodedItem(BaseItem):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._df_wide = None
+
+    def linearised(self, data=None):
+        data = self.converted if data is None else data
+        if not isinstance(data, list):
+            raise ValueError("Data is not a list: " + str(type(data)))
+        mapping = [[i] * len(lst) for i, lst in enumerate(data)]
+        lin_data = [value for lst in data for value in lst]
+        lin_mapping = [value for lst in mapping for value in lst]
+        return lin_data, lin_mapping
+
+    def linearised_df(self, data=None):
+        lin_data, lin_mapping = self.linearised(data)
+        dct = {"index": lin_mapping, "text": lin_data}
+        df = pd.DataFrame(dct)
+        return df
+
+    def linearised_to_csv(self, folder, filename=None):
+        root = Path(folder)
+        if filename is None:
+            filename = self.name + "_linearised"
+        fname = (root / filename).with_suffix(".csv")
+        df = self.linearised_df()
+        df.to_csv(fname)
+
+    def set_coded(
+        self,
+        df: pd.DataFrame,
+        column_name,
+        present_value=1,
+        fill_value=0,
+        exclude=None,
+    ):
+        lin_data, lin_mapping = self.linearised()
+        if len(lin_mapping) != len(df["index"]):
+            raise ValueError("Coding DataFrame is the wrong length for item "
+                             + self.name + ".")
+        self._df_coded = df
+        df2 = df.copy()
+        df2["values"] = present_value
+        df_wide = pd.pivot_table(
+            df2,
+            columns=column_name,
+            index="index",
+            values="values",
+            fill_value=fill_value,
+        )
+        if exclude:
+            for excl_name in exclude:
+                df_wide = df_wide.drop(excl_name)
+        df_wide["count"] = np.sum(df_wide, axis=1)
+        df_wide = df_wide.add_prefix(self.name + "_")
+        self._df_wide = df_wide
+
+    def set_coded_from_csv(
+        self, folder, column_name, present_value=1, fill_value=0, filename=None
+    ):
+        root = Path(folder)
+        if filename is None:
+            filename = self.name + "_linearised_coded"
+        fname = (root / filename).with_suffix(".csv")
+        df = pd.read_csv(fname, index_col=0)
+        self.set_coded(
+            df,
+            column_name=column_name,
+            present_value=present_value,
+            fill_value=fill_value,
+        )
+
+    def data_dict(self, typ="default", match_size=True):
+        if self._df_wide is None:
+            return super().data_dict(typ=typ, match_size=match_size)
+        dct = self._df_wide.to_dict("list")
+        return dct
 
 
 class NumericItem(BaseItem):
@@ -230,7 +315,7 @@ class NumericItem(BaseItem):
             transformed = -transformed + self._reverse_offset
         return transformed
 
-    def values(self, typ='default'):
+    def values(self, typ="default"):
         if typ in ["default", "standardised"]:
             return self.standardised
         elif typ == "normalised":
@@ -286,7 +371,7 @@ class PhraseCount(BaseItem):
     def as_list(self):
         return list(self._counts.keys())
 
-    def values(self, typ='default'):
+    def values(self, typ="default"):
         if typ in ["default", "counts"]:
             return self.counts
         else:

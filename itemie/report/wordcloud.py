@@ -22,3 +22,10 @@ class WordCloud:
                        **kwargs)
         wc.generate_from_frequencies(counts)
         return wc
+    
+    def to_svg(self, wc):
+        svg_string = wc.to_svg(embed_font=True)
+        byts = svg_string.encode()
+        encoded = base64.b64encode(byts)
+        src = 'data:image/svg+xml;base64,{}'.format(encoded.decode())
+        return src

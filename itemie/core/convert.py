@@ -52,6 +52,21 @@ class Replace(BaseConverter):
         return np.array(out)
 
 
+class StrReplace(BaseConverter):
+    def __init__(self, keyvals: dict):
+        self._keyvals = keyvals
+
+    def convert(self, data) -> np.ndarray:
+        dct = self._keyvals
+        out = []
+        for s in data:
+            s2 = s
+            for substring, replacement in dct.items():
+                s2 = (s.replace(substring, replacement)) 
+            out.append(s2)
+        return np.array(out)
+
+
 class Function(BaseConverter):
     def __init__(self, func):
         self._func = func

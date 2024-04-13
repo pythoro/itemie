@@ -16,8 +16,16 @@ from .item import BaseItem
 
 
 class BaseGroup:
-    def __init__(self, name, pref=None, text=None, items=None, item_cls=None, group_cls=None,
-                 converter=None):
+    def __init__(
+        self,
+        name,
+        pref=None,
+        text=None,
+        items=None,
+        item_cls=None,
+        group_cls=None,
+        converter=None,
+    ):
         self._name = name
         self._pref = pref
         self._text = text
@@ -35,10 +43,11 @@ class BaseGroup:
     def __repr__(self):
         return str(self)
 
-    def _str(self, prefix=''):
-        next_prefix = prefix + '  '
+    def _str(self, prefix=""):
+        next_prefix = prefix + "  "
         return (
-            prefix + self.__class__.__name__
+            prefix
+            + self.__class__.__name__
             + " '"
             + self.name
             + "'\n"
@@ -48,6 +57,10 @@ class BaseGroup:
     @property
     def name(self):
         return self._name
+
+    @property
+    def text(self):
+        return self._text
 
     @property
     def names(self):
@@ -61,22 +74,26 @@ class BaseGroup:
     def size(self):
         return self.items[0].size
 
-    def add_item(self, name, key, converter=None, cls=None, text=None, **kwargs):
+    def add_item(
+        self, name, key, converter=None, cls=None, text=None, **kwargs
+    ):
         if cls is None:
             if self._item_cls is None:
-                raise ValueError('cls required when group item_cls not set.')
+                raise ValueError("cls required when group item_cls not set.")
             cls = self._item_cls
         converter = self._converter if converter is None else converter
         if self._pref is not None:
             key = self._pref + key
-        item = cls(name=name, key=key, converter=converter, text=text, **kwargs)
+        item = cls(
+            name=name, key=key, converter=converter, text=text, **kwargs
+        )
         self.add(item)
         return item
 
     def add_group(self, name, pref, cls=None, text=None, **kwargs):
         if cls is None:
             if self._group_cls is None:
-                raise ValueError('cls required when group group_cls not set.')
+                raise ValueError("cls required when group group_cls not set.")
             cls = self._group_cls
         grp = cls(name=name, pref=pref, text=text, **kwargs)
         self.add(grp)
@@ -88,10 +105,12 @@ class BaseGroup:
     def get(self, key):
         return self._all_items[key]
 
-    def stats(self, assemble_as="df"):
+    def stats(self, typ="df"):
         labels, _ = self.items[0].stats()
         values = [item.stats()[1] for item in self.items]
-        stats = self._assemble(values, assemble_as=assemble_as)
+        stats = self._assemble(values, typ=typ)
+        if typ == 'df':
+            stats.index = self.items[0].stats()[0]
         return stats
 
     def _get_all_items(self):
@@ -101,7 +120,7 @@ class BaseGroup:
 
     def _add(self, item: BaseItem):
         if item.name in self._items or item.name in self._all_items:
-            raise KeyError('Duplicate item name specified: ' + item.name)
+            raise KeyError("Duplicate item name specified: " + item.name)
         self._items[item.name] = item
         self._all_items.update(item._get_all_items())
 
@@ -163,7 +182,7 @@ class BaseGroup:
         for item in self.items:
             item.fit_transform(df)
 
-    def values(self, typ):
+    def values(self, typ='default'):
         raise ValueError(
             "Item " + self.name + " — typ not understood:" + str(typ)
         )
@@ -205,7 +224,7 @@ class NumericGroup(BaseGroup):
     def _means(self, values):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            return np.nanmean(values, axis=1)
+            return np.nanmean(values, axis=0)
 
     @property
     def raw(self):
@@ -242,7 +261,7 @@ class NumericGroup(BaseGroup):
     def item_stds(self):
         return np.array([item.std for item in self.items])
 
-    def values(self, typ):
+    def values(self, typ='default'):
         if typ == "raw":
             return self.raw
         elif typ == "converted":
