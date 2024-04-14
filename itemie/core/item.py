@@ -222,9 +222,10 @@ class MultiCodedItem(BaseItem):
         )
 
     def data_dict(self, typ="default", match_size=True):
-        if self._df_wide is None:
-            return super().data_dict(typ=typ, match_size=match_size)
-        dct = self._df_wide.to_dict("list")
+        dct = super().data_dict(typ=typ, match_size=match_size)
+        if self._df_wide is not None:
+            dct2 = self._df_wide.to_dict("list")
+            dct.update(dct2)
         return dct
 
 
