@@ -9,12 +9,10 @@ license = "MIT"
 maintainers = [{ name = "Reuben Rusk", email = "pythoro@mindquip.com" }]
 keywords=['SURVEY', 'QUESTIONNAIRE']
 dependencies = [
-    "gensim>=4.3.3",
     "numpy>=1.23.2",
     "pandas>=2.1.1",
-    "pyldavis>=3.4.1",
-    "spacy>=3.8.5",
 ]
+
 classifiers=[
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -34,6 +32,13 @@ classifiers=[
 Homepage = "https://github.com/pythoro/itemie.git"
 Repository = "https://github.com/pythoro/itemie.git"
 Documentation = "https://itemie.readthedocs.io/en/latest/"
+
+[project.optional-dependencies]
+topics = [
+	"gensim>=4.3.3",
+	"pyldavis>=3.4.1",
+    "spacy>=3.8.5"
+]
 
 [tool.hatch.build.targets.sdist]
 include = ["itemie"]

@@ -5,35 +5,42 @@ Created on Wed Oct 25 21:10:58 2023
 @author: Reuben
 """
 
+try:
+    import pandas as pd
+    import numpy as np
+    import spacy 
+    # from spacy import displacy
 
-import pandas as pd
-import numpy as np
-import spacy 
-# from spacy import displacy
+    import gensim
+    from gensim.corpora import Dictionary
+    from gensim import models
+    from gensim.models import LdaModel, CoherenceModel, LsiModel, HdpModel
 
-import gensim
-from gensim.corpora import Dictionary
-from gensim import models
-from gensim.models import LdaModel, CoherenceModel, LsiModel, HdpModel
-
-import pyLDAvis
-import pyLDAvis.gensim_models
-
-
-nlp = spacy.load('en_core_web_sm')
+    import pyLDAvis
+    import pyLDAvis.gensim_models
 
 
-def add_stopwords(stopwords):
-    for stopword in stopwords:
-        lexeme = nlp.vocab[stopword]
-        lexeme.is_stop = True
+    nlp = spacy.load('en_core_web_sm')
 
-extra_stopwords = ['nan', '$']
-add_stopwords(extra_stopwords)
+    def add_stopwords(stopwords):
+        for stopword in stopwords:
+            lexeme = nlp.vocab[stopword]
+            lexeme.is_stop = True
+
+    extra_stopwords = ['nan', '$']
+    add_stopwords(extra_stopwords)
+
+    IMPORTED = True
+except ImportError:
+    print("Optional package not found, some features will be unavailable.")
+    IMPORTED = False
 
 
 class Topics:
     def __init__(self, lemmatize=True, tfidf=True, nlp=None):
+        if not IMPORTED:
+            raise ValueError('Requires optional dependencies: '
+            +'space, gensim, pyLDAvis.')
         self._lemmatize = lemmatize
         self._tfidf = tfidf
         self._nlp = nlp if nlp is not None else nlp

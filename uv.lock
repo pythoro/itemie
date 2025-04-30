@@ -272,21 +272,26 @@ name = "itemie"
 version = "0.0.4"
 source = { editable = "." }
 dependencies = [
-    { name = "gensim" },
     { name = "numpy" },
     { name = "pandas" },
+]
+
+[package.optional-dependencies]
+topics = [
+    { name = "gensim" },
     { name = "pyldavis" },
     { name = "spacy" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "gensim", specifier = ">=4.3.3" },
+    { name = "gensim", marker = "extra == 'topics'", specifier = ">=4.3.3" },
     { name = "numpy", specifier = ">=1.23.2" },
     { name = "pandas", specifier = ">=2.1.1" },
-    { name = "pyldavis", specifier = ">=3.4.1" },
-    { name = "spacy", specifier = ">=3.8.5" },
+    { name = "pyldavis", marker = "extra == 'topics'", specifier = ">=3.4.1" },
+    { name = "spacy", marker = "extra == 'topics'", specifier = ">=3.8.5" },
 ]
+provides-extras = ["topics"]
 
 [[package]]
 name = "jinja2"
