@@ -1,6 +1,6 @@
 [project]
 name = "itemie"
-version = "0.0.1"
+version = "0.0.2"
 description = "Object-oriented analysis for surveys and questionnaires."
 authors = [{ name = "Reuben Rusk", email = "pythoro@mindquip.com" }]
 requires-python = ">=3.9, <3.13"
