@@ -3,7 +3,7 @@ name = "itemie"
 version = "0.0.1"
 description = "Object-oriented analysis for surveys and questionnaires."
 authors = [{ name = "Reuben Rusk", email = "pythoro@mindquip.com" }]
-requires-python = "~=3.9"
+requires-python = ">=3.9, <3.13"
 readme = "README.md"
 license = "MIT"
 maintainers = [{ name = "Reuben Rusk", email = "pythoro@mindquip.com" }]
@@ -11,6 +11,7 @@ keywords=['SURVEY', 'QUESTIONNAIRE']
 dependencies = [
     "numpy>=1.23.2",
     "pandas>=2.1.1",
+    "spacy>=3.8.5",
 ]
 classifiers=[
         "Programming Language :: Python :: 3.8",
