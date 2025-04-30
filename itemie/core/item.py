@@ -228,6 +228,19 @@ class MultiCodedItem(BaseItem):
             dct.update(dct2)
         return dct
 
+    def counts(self, data=None):
+        lin_data, lin_mapping = self.linearised(data=data)
+        uniques, counts = np.unique(lin_data, return_counts=True)
+        lst = [(u, c) for u, c in zip(uniques, counts)]
+        lst.sort(key=lambda tup: tup[1], reverse=True)
+        dct = {u: c for u, c in lst}
+        return dct
+    
+    def counts_df(self, data=None):
+        dct = self.counts(data)
+        df = pd.DataFrame.from_dict(dct, orient='index', columns=['count'])
+        return df
+
 
 class NumericItem(BaseItem):
     """A numeric item class"""
@@ -240,8 +253,8 @@ class NumericItem(BaseItem):
         text=None,
         reverse_offset: float = None,
     ):
-        super().__init__(name=name, key=key, converter=converter, text=text)
         self._reverse_offset = reverse_offset
+        super().__init__(name=name, key=key, converter=converter, text=text)
 
     @property
     def mean(self):
@@ -301,9 +314,13 @@ class NumericItem(BaseItem):
 
         return {convert_nan(v): c / n for v, c in zip(vals, counts)}
 
-    def _post_fit(self, converted):
+    def _convert(self, series: np.ndarray) -> np.ndarray:
+        converted = super()._convert(series)
         if self._reverse_offset is not None:
             converted = -converted + self._reverse_offset
+        return converted
+
+    def _post_fit(self, converted):
         self._mean = np.nanmean(converted)
         self._std = np.nanstd(converted)
         self._max = np.nanmax(converted)
@@ -312,8 +329,6 @@ class NumericItem(BaseItem):
         return converted
 
     def _post_transform(self, transformed):
-        if self._reverse_offset is not None:
-            transformed = -transformed + self._reverse_offset
         return transformed
 
     def values(self, typ="default"):

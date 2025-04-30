@@ -33,14 +33,19 @@ add_stopwords(extra_stopwords)
 
 
 class Topics:
-    def __init__(self, lemmatize=True, tfidf=True):
+    def __init__(self, lemmatize=True, tfidf=True, nlp=None):
         self._lemmatize = lemmatize
         self._tfidf = tfidf
+        self._nlp = nlp if nlp is not None else nlp
                 
     def setup(self, item, num_topics=5, data=None, random_state=0):
         data = item.values('default') if data is None else data
-        lin_data, mapping = item.linearised(data)
-        texts = self._get_texts(lin_data)
+        lst_texts, mapping = item.linearised(data)
+        self.setup_from_texts(lst_texts, num_topics, random_state)
+        self._mapping = mapping
+
+    def setup_from_texts(self, lst_texts, num_topics=5, random_state=0):
+        texts = self._get_texts(lst_texts)
         dictionary, corpus = self._make_corpus(texts)
         self._num_topics = num_topics
         self._texts = texts
@@ -48,7 +53,6 @@ class Topics:
         self._dictionary = dictionary
         self._corpus = corpus
         self._model = model
-        self._mapping = mapping
 
     @property
     def mapping(self):
@@ -56,7 +60,7 @@ class Topics:
 
     def _get_texts(self, lin_data):
         texts = []
-        for text in nlp.pipe(lin_data):
+        for text in self._nlp.pipe(lin_data):
             response = []
             for word in text:
                 if word.text != '\n' and not word.is_stop and not word.is_punct\
@@ -65,7 +69,8 @@ class Topics:
                      response.append(to_append)
             texts.append(response)
         texts = self._make_bigrams(texts)
-        return texts
+        lst = [t for t in texts if len(t) > 0]
+        return lst
 
     def _make_bigrams(self, texts):
         bigram = gensim.models.phrases.Phrases(texts)

@@ -62,7 +62,7 @@ class StrReplace(BaseConverter):
         for s in data:
             s2 = s
             for substring, replacement in dct.items():
-                s2 = (s.replace(substring, replacement)) 
+                s2 = (s2.replace(substring, replacement)) 
             out.append(s2)
         return np.array(out)
 
