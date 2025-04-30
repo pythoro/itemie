@@ -1,0 +1,43 @@
+[project]
+name = "itemie"
+version = "0.0.1"
+description = "Object-oriented analysis for surveys and questionnaires."
+authors = [{ name = "Reuben Rusk", email = "pythoro@mindquip.com" }]
+requires-python = "~=3.9"
+readme = "README.md"
+license = "MIT"
+maintainers = [{ name = "Reuben Rusk", email = "pythoro@mindquip.com" }]
+keywords=['SURVEY', 'QUESTIONNAIRE']
+dependencies = [
+    "numpy>=1.23.2",
+    "pandas>=2.1.1",
+]
+classifiers=[
+        "Programming Language :: Python :: 3.8",
+		"Programming Language :: Python :: 3.9",
+		"Programming Language :: Python :: 3.10",
+		"Programming Language :: Python :: 3.11",
+		"Programming Language :: Python :: 3.12",
+		"Programming Language :: Python :: 3.13",
+        "Development Status :: 4 - Beta",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Natural Language :: English",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Scientific/Engineering",
+    ]
+
+[project.urls]
+Homepage = "https://github.com/pythoro/itemie.git"
+Repository = "https://github.com/pythoro/itemie.git"
+Documentation = "https://itemie.readthedocs.io/en/latest/"
+
+[tool.hatch.build.targets.sdist]
+include = ["itemie"]
+
+[tool.hatch.build.targets.wheel]
+include = ["itemie"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
