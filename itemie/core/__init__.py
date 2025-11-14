@@ -8,4 +8,3 @@ from . import base
 from . import items
 from . import conversion
 from . import groups
-from . import group_conversion
