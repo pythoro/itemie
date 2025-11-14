@@ -1,9 +1,11 @@
 
 from __future__ import annotations
 
+import pandas as pd
 from . import base
 from . import items, groups
 from typing import Callable
+
 
 class Converter:
     """Class for handling conversion operations."""
@@ -59,17 +61,23 @@ class SeriesToListSeries(Converter):
         return value.split(self._split_char)
 
 
-class ListSeriesToDataFrame(Converter):
-    """Converter to convert list series to a data frame."""
 
-    def __call__(self, item: items.ListSeries) -> items.DataFrame:
-        """Convert the item to integers using the mapping."""
-        pass
+class SeriesListToDataFrame(Converter):
+    def __call__(self, item_list: list[items.Series], name: str, desc: str | None = None) -> items.DataFrame:
+        """Create a DataFrame from a list of items."""
+        df = pd.concat([item.data for item in item_list], axis=1)
+        return items.DataFrame(data=df, name=name, desc=desc)
 
 
-class ListSeriesToGSeries(Converter):
-    """Converter to convert list series to a data frame."""
+class DataFrameToSeries:
+    """Class for handling row operations."""
 
-    def __call__(self, item: items.ListSeries) -> groups.GSeries:
-        """Convert the item to integers using the mapping."""
-        pass
+    def __call__(self, dataframe: items.DataFrame):
+        self._data = item_list
+
+
+class DataFrameToSum:
+    """Class for handling row operations."""
+
+    def __call__(self, dataframe: items.DataFrame):
+        self._data = item_list
