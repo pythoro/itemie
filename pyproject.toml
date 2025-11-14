@@ -33,13 +33,6 @@ Homepage = "https://github.com/pythoro/itemie.git"
 Repository = "https://github.com/pythoro/itemie.git"
 Documentation = "https://itemie.readthedocs.io/en/latest/"
 
-[project.optional-dependencies]
-topics = [
-	"gensim>=4.3.3",
-	"pyldavis>=3.4.1",
-    "spacy>=3.8.5"
-]
-
 [tool.hatch.build.targets.sdist]
 include = ["itemie"]
 
@@ -49,3 +42,9 @@ include = ["itemie"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "ruff>=0.14.5",
+]

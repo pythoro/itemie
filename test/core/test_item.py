@@ -9,14 +9,14 @@ import numpy as np
 import pandas as pd
 from pytest import approx
 
-from itemie.core import item
+from itemie.core import items
 
 
 @pytest.fixture
 def item_b():
     data = np.array([[1, 2, 3, 4], [2, 3, 4, 5], [1, 2, 3, 4]])
     df = pd.DataFrame(data, columns=["a", "b", "c", "d"])
-    b = item.BaseItem(name="banana", key="b")
+    b = items.BaseItem(name="banana", key="b")
     b.fit_transform(df)
     return b
 
@@ -25,7 +25,7 @@ class TestBaseItem:
     def test_fit(self):
         data = np.array([[1, 2, 3, 4], [2, 3, 4, 5], [1, 2, 3, 4]])
         df = pd.DataFrame(data, columns=["a", "b", "c", "d"])
-        b = item.BaseItem(name="banana", key="b")
+        b = items.BaseItem(name="banana", key="b")
         res = b.fit_transform(df)
         expected = np.array([2, 3, 2])
         print(res)
@@ -48,7 +48,7 @@ class TestBaseItem:
 def numericitem_b():
     data = np.array([[1, 2, 3, 4], [2, 3, 4, 5], [1, 2, 3, 4]])
     df = pd.DataFrame(data, columns=["a", "b", "c", "d"])
-    b = item.NumericItem(name="banana", key="b")
+    b = items.NumericItem(name="banana", key="b")
     b.fit_transform(df)
     return b
 
@@ -57,7 +57,7 @@ def numericitem_b():
 def numericitem_b_raw():
     data = np.array([[1, 2, 3, 4], [2, 3, 4, 5], [1, 2, 3, 4]])
     df = pd.DataFrame(data, columns=["a", "b", "c", "d"])
-    b = item.NumericItem(name="banana", key="b")
+    b = items.NumericItem(name="banana", key="b")
     b.fit_transform(df)
     return b
 

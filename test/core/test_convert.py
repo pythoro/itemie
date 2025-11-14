@@ -10,12 +10,12 @@ import numpy as np
 import pandas as pd
 from pytest import approx
 
-from itemie.core import convert
+from itemie.core import conversion
 
 class TestReplace:
     def test_convert(self):
         keyvals = {"apple": 1.0, "pear": 2.0}
-        converter = convert.Replace(keyvals)
+        converter = conversion.Replace(keyvals)
         data = np.array(["apple", "pear", "apple", "apple", "pear"])
         converted = converter.convert(data)
         expected = np.array([1.0, 2.0, 1.0, 1.0, 2.0])
@@ -24,7 +24,7 @@ class TestReplace:
         
 class TestAutoCorrect:
     def test_convert(self):
-        converter = convert.AutoCorrect()
+        converter = conversion.AutoCorrect()
         data = np.array(["apple", "pear", "applee"])
         converted = converter.convert(data)
         expected = np.array(["apple", "pear", "apple"])
@@ -34,10 +34,10 @@ class TestAutoCorrect:
         
 class TestPipeline:
     def test_convert(self):
-        autocorrect = convert.AutoCorrect()
+        autocorrect = conversion.AutoCorrect()
         keyvals = {"apple": 1.0, "pear": 2.0}
-        replacer = convert.Replace(keyvals)
-        converter = convert.Pipeline(autocorrect, replacer)
+        replacer = conversion.Replace(keyvals)
+        converter = conversion.Pipeline(autocorrect, replacer)
         data = np.array(["apple", "pear", "apple", "applee", "pear"])
         converted = converter.convert(data)
         expected = np.array([1.0, 2.0, 1.0, 1.0, 2.0])
