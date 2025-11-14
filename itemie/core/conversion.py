@@ -5,13 +5,19 @@ Created on Thu Oct 19 16:14:10 2023
 @author: Reuben
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from . import items
-from . import base
+from . import base, groups
 
 class Converter:
     """Class for handling conversion operations."""
+
+    def __call__(self, object: base.Object) -> base.Object:
+        """Convert the input value."""
+        return self.convert(object)
 
     def convert(self, object: base.Object) -> base.Object:
         """Convert the input value."""
@@ -21,7 +27,7 @@ class Converter:
 class Numeric(Converter):
     """Converter to convert values to integers."""
 
-    def __init__(self, mapping: dict[object, int], missing=None):
+    def __init__(self, mapping: dict, missing=None):
         self._mapping = mapping
         self._missing = missing
 

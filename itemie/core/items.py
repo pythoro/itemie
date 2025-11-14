@@ -13,8 +13,6 @@ import pandas as pd
 from typing import Any, Generator
 
 from . import base
-from . import conversion
-
 
 class DataFrame():
     """Class for handling DataFrame operations."""
@@ -30,11 +28,11 @@ class DataFrame():
         df = pd.read_csv(file_path)
         return cls(data=df, name=name, desc=desc)
     
-    def item(self, column: str, name: str, desc: str | None = None) -> Series:
+    def col(self, column: str, name: str, desc: str | None = None) -> Series:
         """Create an Item from a column."""
         series = self._data[column]
         series.name = name
-        return Series(series, name=name, desc=desc)
+        return Series(data=series, name=name, desc=desc)
 
 
 class Series(base.Object):

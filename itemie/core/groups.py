@@ -12,7 +12,6 @@ import pandas as pd
 
 from . import base
 from . import items
-from . import group_conversion
 from typing import Generator
 
 
@@ -42,10 +41,9 @@ class Group(base.Object):
         df = pd.concat(dfs, axis=1)
         return df
 
-    def to(self, group_converter: group_conversion.GroupConverter) -> Group:
-        """Convert all items in the group using a converter function."""
-        return group_converter.convert(self)
 
+class Series(Group):
+    pass
 
 class Numeric(Group):
     """Class for handling numeric group operations."""
@@ -64,8 +62,8 @@ class Numeric(Group):
             return self
         item_list = []
         for item in self._data:
-            if isinstance(item, items.Numeric):
+            if isinstance(item, items.Numeric | Numeric):
                 item_list.append(item.standardise())
             else:
-                raise TypeError("All items must be of type items.Numeric")
+                raise TypeError("All items must be of type items.Numeric or groups.Numeric")
         return Numeric(data=item_list, name=self._name, desc=self._desc)

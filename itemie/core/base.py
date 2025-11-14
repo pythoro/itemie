@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import pandas as pd
-from typing import Any, Generator
+from typing import Any, Generator, TYPE_CHECKING
 
-from . import conversion
+if TYPE_CHECKING:
+    from . import conversion
 
 class Object:
     """Class for handling single item operations."""
@@ -30,10 +31,6 @@ class Object:
         # This is a generator function that yields items from self.data
         for item in self._data:
             yield item
-
-    def to(self, converter: conversion.Converter) -> Object:
-        """Convert the item using a converter function."""
-        return converter.convert(self)
 
     def to_df(self) -> pd.DataFrame:
         raise NotImplementedError("Subclasses must implement the to_df property.")
